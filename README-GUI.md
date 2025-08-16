@@ -13,7 +13,7 @@ This adds a simple Gradio GUI on top of `generate_headpat.py`. It lets you uploa
 
 ## Quick start (local or Codespaces)
 1. Ensure `ffmpeg` is installed.
-   - Debian/Ubuntu: `apt-get update && apt-get install -y ffmpeg`
+   - Debian/Ubuntu: `sudo apt-get update && apt-get install -y ffmpeg`
 2. Install Python deps: `pip install -r requirements.txt`
 3. Run the GUI: `python app.py`
 4. Open the shown URL (in Codespaces, use the forwarded port).
