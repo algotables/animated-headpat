@@ -1,20 +1,7 @@
 
-# Python
 __pycache__/
 *.pyc
-*.pyo
-*.pyd
-*.egg-info
-.venv/
-venv/
-
-# Outputs
 outputs/
 *.log.txt
-
-# Gradio
-gradio_cached_examples/
-
-# OS junk
 .DS_Store
 Thumbs.db
