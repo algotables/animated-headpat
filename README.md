@@ -13,6 +13,9 @@ Telegram or anywhere that accepts video stickers up to 512×512 pixels.
   `assets/hand_frames` – no need to find your own.
 - **Customisable**: adjust the scale of your character, frame rate, output
   resolution and quality via flags.
+- **Gentle squish effect**: by default the character subtly compresses when
+  patted to mimic a real head‑pat. Disable this with `--no-squish` if you
+  prefer no distortion.
 - **Clean alpha**: output videos include true transparency (no green screen)
   thanks to VP9’s `yuva420p` pixel format.
 
@@ -33,6 +36,21 @@ Telegram or anywhere that accepts video stickers up to 512×512 pixels.
 After a few seconds you will find your 512×512 head‑pat animation in WebM
 format. The hand will gently pat your character’s head forever!
 
+## GUI interface
+
+If you prefer not to use the command line, this repository also includes
+`headpat_gui.py`, a simple drag‑and‑drop web interface built with
+Gradio. Launch it with:
+
+```bash
+python headpat_gui.py
+```
+
+When running inside a Codespace or locally, a browser window will open
+allowing you to upload an image, adjust the character scale and squish
+settings, and download the resulting WebM. In Codespaces, GitHub will
+prompt you to open a forwarded port automatically.
+
 ## Options
 
 ```
@@ -52,6 +70,8 @@ options:
                         bundled assets)
   --scale SCALE         Fraction of canvas width for the character (default:
                         0.9)
+  --no-squish           Disable the gentle head‑squish effect (enabled by
+                        default)
   --fps FPS             Frames per second (default: 30)
   --size SIZE           Output square canvas size (default: 512)
   --crf CRF             VP9 quality factor (lower = higher quality,
