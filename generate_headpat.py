@@ -55,12 +55,20 @@ def load_hand_frames(hand_dir: Path) -> list[Image.Image]:
     return frames
 
 
-def create_headpat_frames(hand_frames: list[Image.Image], char_img: Image.Image, scale: float) -> list[Image.Image]:
+def create_headpat_frames(
+    hand_frames: list[Image.Image],
+    char_img: Image.Image,
+    scale: float,
+    squish: bool = True,
+    squish_factors: list[float] | None = None,
+) -> list[Image.Image]:
     """Composite the character image with each hand overlay frame.
 
     The character is resized based on the ``scale`` factor relative to the
     overlay frame width. It is centred horizontally and aligned to the bottom
-    of the canvas. Each hand frame is then pasted over the top.
+    of the canvas. Each hand frame is then pasted over the top. Optionally,
+    the character can be vertically squished on certain frames to mimic
+    the head being pressed by the hand.
 
     Parameters
     ----------
@@ -70,6 +78,12 @@ def create_headpat_frames(hand_frames: list[Image.Image], char_img: Image.Image,
         The base image to pat.
     scale : float
         Character width as a fraction of the canvas width (0 < scale ≤ 1).
+    squish : bool, optional
+        If True, apply vertical squish to the character on a per‑frame basis.
+    squish_factors : list[float] | None, optional
+        A list of height multipliers (one per frame). If None and ``squish``
+        is True, a default pattern of gentle squishes is used. Ignored if
+        ``squish`` is False.
 
     Returns
     -------
@@ -79,19 +93,39 @@ def create_headpat_frames(hand_frames: list[Image.Image], char_img: Image.Image,
     if not (0 < scale <= 1):
         raise ValueError("scale must be between 0 and 1")
     base_w, base_h = hand_frames[0].size
-    # Resize character to maintain aspect ratio and fit within the canvas
+    # Convert character to RGBA and compute a base resized copy
     char = char_img.convert("RGBA")
     target_w = int(base_w * scale)
-    ratio = target_w / char.width
-    target_h = int(char.height * ratio)
-    char_resized = char.resize((target_w, target_h), Image.LANCZOS)
+    width_ratio = target_w / char.width
+    base_target_h = int(char.height * width_ratio)
+    base_char = char.resize((target_w, base_target_h), Image.LANCZOS)
+    # Determine squish factors
+    if not squish:
+        # No squish: all factors are 1.0
+        factors = [1.0] * len(hand_frames)
+    else:
+        if squish_factors is None:
+            # Default gentle squish pattern: slightly compress when the hand is
+            # down and spring back up. Repeat or truncate to match frames.
+            default = [1.0, 0.94, 0.88, 0.94, 1.0]
+            # Repeat pattern to length of hand_frames
+            factors = [default[i % len(default)] for i in range(len(hand_frames))]
+        else:
+            # If provided factors length mismatches number of frames, cycle
+            factors = [squish_factors[i % len(squish_factors)] for i in range(len(hand_frames))]
     frames: list[Image.Image] = []
-    for hand in hand_frames:
+    for idx, (hand, factor) in enumerate(zip(hand_frames, factors)):
+        # Compute squished character height
+        if factor != 1.0:
+            squished_h = max(1, int(base_target_h * factor))
+            char_resized = base_char.resize((target_w, squished_h), Image.LANCZOS)
+        else:
+            char_resized = base_char
         # Create a transparent canvas for compositing
         canvas = Image.new("RGBA", (base_w, base_h), (0, 0, 0, 0))
         # Position the character at the bottom centre
         x_offset = (base_w - target_w) // 2
-        y_offset = base_h - target_h
+        y_offset = base_h - char_resized.height
         canvas.paste(char_resized, (x_offset, y_offset), char_resized)
         # Paste the hand overlay on top
         canvas.paste(hand, (0, 0), hand)
@@ -157,6 +191,11 @@ def main() -> None:
     parser.add_argument("--output", "-o", help="Path to the output .webm (default: input name with _headpat.webm)")
     parser.add_argument("--hand-dir", default=None, help="Directory containing hand overlay frames (default: bundled assets)")
     parser.add_argument("--scale", type=float, default=0.9, help="Fraction of canvas width for the character (default: 0.9)")
+    parser.add_argument(
+        "--no-squish",
+        action="store_true",
+        help="Disable the gentle head squish effect (enabled by default)",
+    )
     parser.add_argument("--fps", type=int, default=30, help="Frames per second (default: 30)")
     parser.add_argument("--size", type=int, default=512, help="Output square canvas size (default: 512)")
     parser.add_argument("--crf", type=int, default=32, help="VP9 quality factor (lower = higher quality, default: 32)")
@@ -179,7 +218,12 @@ def main() -> None:
     # Load overlays and character
     hand_frames = load_hand_frames(hand_dir)
     char_img = Image.open(input_path)
-    frames = create_headpat_frames(hand_frames, char_img, args.scale)
+    frames = create_headpat_frames(
+        hand_frames,
+        char_img,
+        args.scale,
+        squish=not args.no_squish,
+    )
     save_frames_as_webm(frames, args.fps, args.size, args.crf, out_path)
     print(f"Done → {out_path}")
 
