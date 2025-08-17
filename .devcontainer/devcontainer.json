@@ -2,14 +2,14 @@
   "name": "animated-headpat",
   "image": "mcr.microsoft.com/devcontainers/python:3.11",
   "postCreateCommand": "apt-get update && apt-get install -y ffmpeg && pip install -r requirements.txt",
+  "forwardPorts": [
+    7860
+  ],
   "customizations": {
     "codespaces": {
       "openFiles": [
-        "README-GUI.md"
+        "README.md"
       ]
     }
-  },
-  "forwardPorts": [
-    7860
-  ]
+  }
 }

@@ -2,6 +2,8 @@
 __pycache__/
 *.pyc
 outputs/
+*.webm
 *.log.txt
+frame_*.png
 .DS_Store
 Thumbs.db
